@@ -1,0 +1,15 @@
+name: 'Uncache'
+description: 'Uncaches the workspace'
+inputs:
+  from-job:
+    description: 'job name to restore from'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: restore full cache
+      uses: actions/cache/restore@v3
+      with:
+        path: '.'
+        key: ${{ github.ref_name }}-${{ inputs.from-job }}-${{ github.run_id }}

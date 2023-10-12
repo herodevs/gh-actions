@@ -1,0 +1,15 @@
+name: 'Cache'
+description: 'Cache the workspace'
+inputs:
+  job:
+    description: 'job name'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: save full cache
+      uses: actions/cache/save@v3
+      with:
+        path: '.'
+        key: ${{ github.ref_name }}-${{ inputs.job }}-${{ github.run_id }}
