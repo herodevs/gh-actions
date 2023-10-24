@@ -16,7 +16,7 @@ This action will:
 
 ```
 - name: init
-  uses: neverendingsupport/actions/init@v1
+  uses: herodevs/gh-actions/init@v1
   with:
     node-version: 18
 ```
@@ -31,7 +31,7 @@ NOTE - this is used to build the key name of the cache being created
 ### Usage
 ```
 - name: cache
-  uses: neverendingsupport/actions/cache@v1
+  uses: herodevs/gh-actions/cache@v1
   with:
     job: [JOB_NAME]
 ```
@@ -45,7 +45,7 @@ NOTE - this is used to build the key name of the cache being created
 ### Usage
 ```
 - name: uncache
-  uses: neverendingsupport/actions/uncache@v1
+  uses: herodevs/gh-actions/uncache@v1
   with:
     from-job: [JOB_NAME]
 ```
