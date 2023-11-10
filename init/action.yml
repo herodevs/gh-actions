@@ -5,6 +5,12 @@ inputs:
     description: 'The version of node to use (default: 20)'
     required: false
     default: 20
+  username:
+    description: 'The username for authentication'
+    required: true
+  password:
+    description: 'The password/token for authentication'
+    required: true
 
 runs:
   using: 'composite'
@@ -16,8 +22,8 @@ runs:
     - uses: docker/login-action@v2
       with:
         registry: ghcr.io
-        username: ${{ github.repository_owner }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
 
     # Set up node with the specified version
     - uses: actions/setup-node@v3 v${{ inputs.node-version }}
@@ -26,4 +32,4 @@ runs:
         registry-url: https://npm.pkg.github.com
         scope: "@neverendingsupport"
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NODE_AUTH_TOKEN: ${{ inputs.password }}
