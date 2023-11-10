@@ -26,7 +26,7 @@ runs:
         password: ${{ inputs.password }}
 
     # Set up node with the specified version
-    - uses: actions/setup-node@v3 v${{ inputs.node-version }}
+    - uses: actions/setup-node@v3
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: https://npm.pkg.github.com
