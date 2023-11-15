@@ -1,0 +1,96 @@
+
+name: Stops Sauce Tunnel
+description: Stops saucelabs tunnel svc
+
+inputs:
+  sauceUsername:
+    description: The sauce username to use to connect to sauce labs
+    required: true
+  sauceAccessKey:
+    description: The sauce access key to use to connect to sauce labs
+    required: true
+  sauceTunnelName:
+    description: The tunnel name to use
+    required: true
+  sauceTunnelDomain:
+    description: The sauce tunnel domain (default is `localhost`)
+    required: false
+    default: localhost
+  sauceConfig:
+    description: The path to the sauce config (default is `./.sauce/config.yml`)
+    required: false
+    default: ./.sauce/config.yml
+  sauceRegion:
+    description: The sauce region/datacenter to run the browser tests in
+    required: false
+    default: us-west
+  prerunScript:
+    description: 'Any script you want to run before running Sauce (eg. build/serve)'
+    required: false
+
+# env:
+#   SAUCE_USERNAME: ${{ inputs.sauceUsername }}
+#   SAUCE_ACCESS_KEY: ${{ inputs.sauceAccessKey }}
+#   SAUCE_REGION: ${{ inputs.sauceRegion }}
+#   SAUCE_CONFIG: ${{ inputs.sauceConfig }}
+#   SAUCE_TUNNEL_NAME: ${{ inputs.sauceTunnelName }}
+#   SAUCE_TUNNEL_DOMAIN: ${{ inputs.sauceTunnelDomain }}
+
+runs:
+  using: composite
+  steps:
+    - name: Open Sauce Tunnel And Run Pre-Run Script
+      shell: bash
+      id: tunnel
+      run: |
+        export SAUCE_USERNAME=${{ inputs.sauceUsername }}
+        export SAUCE_ACCESS_KEY=${{ inputs.sauceAccessKey }}
+        export SAUCE_REGION=${{ inputs.sauceRegion }}
+        export SAUCE_CONFIG=${{ inputs.sauceConfig }}
+        export SAUCE_TUNNEL_NAME=${{ inputs.sauceTunnelName }}
+        export SAUCE_TUNNEL_DOMAIN=${{ inputs.sauceTunnelDomain }}
+
+        export SAUCE_CONNECT_VERSION='4.9.2'
+
+        echo "FINDME1"
+        cat /etc/hosts
+        echo "FINDME2"
+
+        ping -c 4 localhost
+        echo "FINDME3"
+
+        cd $HOME
+        wget "https://saucelabs.com/downloads/sc-${SAUCE_CONNECT_VERSION}-linux.tar.gz"
+        tar xvf "./sc-${SAUCE_CONNECT_VERSION}-linux.tar.gz"
+        export PATH="$HOME/sc-${SAUCE_CONNECT_VERSION}-linux/bin:$PATH"
+        cd -
+
+        sc -u "$SAUCE_USERNAME" -k "$SAUCE_ACCESS_KEY" --region $SAUCE_REGION --tunnel-name "$SAUCE_TUNNEL_NAME" --tunnel-domains "$SAUCE_TUNNEL_DOMAIN" -f sc.lock -d sc.pid --no-ssl-bump-domains all &
+        echo "Waiting for Sauce Connect to be ready for $SAUCE_TUNNEL_DOMAIN ..."
+        while [ ! -f sc.lock ]
+        do
+          echo "No lock..."
+          sleep 2
+          echo "Does lock exist?"
+        done
+        echo "lock exists!"
+        echo "pid=$(cat sc.pid)" >> "$GITHUB_OUTPUT"
+
+        eval "${{ inputs.prerunScript }}"
+
+    - name: Run sauce
+      shell: bash
+      run: |
+        export SAUCE_USERNAME=${{ inputs.sauceUsername }}
+        export SAUCE_ACCESS_KEY=${{ inputs.sauceAccessKey }}
+        export SAUCE_REGION=${{ inputs.sauceRegion }}
+        export SAUCE_CONFIG=${{ inputs.sauceConfig }}
+        export SAUCE_TUNNEL_NAME=${{ inputs.sauceTunnelName }}
+        export SAUCE_TUNNEL_DOMAIN=${{ inputs.sauceTunnelDomain }}
+        npx saucectl run --tunnel-name $SAUCE_TUNNEL_NAME --show-console-log --verbose
+    
+    - name: Sauce Connect Cleanup
+      if: always()
+      shell: bash
+      run: |
+        kill ${{ steps.tunnel.outputs.pid }}
