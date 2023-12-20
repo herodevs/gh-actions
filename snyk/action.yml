@@ -1,0 +1,23 @@
+
+name: Run Snyk Scan
+description: Runs Snyk Scan
+
+inputs:
+  snykToken:
+    description: The snyk token used to access snyk cloud and/or run scan
+    required: true
+  snykThreshold:
+    description: The snyk threshold to fail on
+    default: medium
+    required: false
+
+runs:
+  using: composite
+  steps:
+
+    - name: Run Snyk to check for vulnerabilities
+      uses: snyk/actions/node@master
+      with:
+        args: --severity-threshold=${{ inputs.snykThreshold }}
+      env:
+        SNYK_TOKEN: ${{ inputs.snykToken }}

@@ -1,6 +1,6 @@
 
-name: Stops Sauce Tunnel
-description: Stops saucelabs tunnel svc
+name: Sauce Action
+description: Runs saucelabs tests
 
 inputs:
   sauceUsername:
