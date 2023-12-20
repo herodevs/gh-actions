@@ -1,0 +1,16 @@
+
+name: Sonar Cloud
+description: Runs Sonar Cloud Scan
+
+inputs:
+  sonarToken:
+    description: The sonar token used to access sonar cloud and/or run scan
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Run SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@v2.0.2
+      env:
+        SONAR_TOKEN: ${{ inputs.sonarToken }}

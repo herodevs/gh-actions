@@ -1,6 +1,6 @@
 
-name: Stops Sauce Tunnel
-description: Stops saucelabs tunnel svc
+name: Sauce Action
+description: Runs saucelabs tests
 
 inputs:
   sauceUsername:
@@ -27,14 +27,10 @@ inputs:
   prerunScript:
     description: 'Any script you want to run before running Sauce (eg. build/serve)'
     required: false
-
-# env:
-#   SAUCE_USERNAME: ${{ inputs.sauceUsername }}
-#   SAUCE_ACCESS_KEY: ${{ inputs.sauceAccessKey }}
-#   SAUCE_REGION: ${{ inputs.sauceRegion }}
-#   SAUCE_CONFIG: ${{ inputs.sauceConfig }}
-#   SAUCE_TUNNEL_NAME: ${{ inputs.sauceTunnelName }}
-#   SAUCE_TUNNEL_DOMAIN: ${{ inputs.sauceTunnelDomain }}
+  skipSauceCtl:
+    default: ''
+    description: 'This option skips running saucectl. This allows libraries to run sauce themselves with an open tunnel. (use `$SAUCE_TUNNEL_NAME` for tunnel name)'
+    required: false
 
 runs:
   using: composite
@@ -43,6 +39,7 @@ runs:
       shell: bash
       id: tunnel
       run: |
+        npm i -g saucectl@0.168.0
         export SAUCE_USERNAME=${{ inputs.sauceUsername }}
         export SAUCE_ACCESS_KEY=${{ inputs.sauceAccessKey }}
         export SAUCE_REGION=${{ inputs.sauceRegion }}
@@ -52,34 +49,35 @@ runs:
 
         export SAUCE_CONNECT_VERSION='4.9.2'
 
-        echo "FINDME1"
-        cat /etc/hosts
-        echo "FINDME2"
-
-        ping -c 4 localhost
-        echo "FINDME3"
-
         cd $HOME
-        wget "https://saucelabs.com/downloads/sc-${SAUCE_CONNECT_VERSION}-linux.tar.gz"
+        wget -nv "https://saucelabs.com/downloads/sc-${SAUCE_CONNECT_VERSION}-linux.tar.gz"
         tar xvf "./sc-${SAUCE_CONNECT_VERSION}-linux.tar.gz"
         export PATH="$HOME/sc-${SAUCE_CONNECT_VERSION}-linux/bin:$PATH"
         cd -
 
         sc -u "$SAUCE_USERNAME" -k "$SAUCE_ACCESS_KEY" --region $SAUCE_REGION --tunnel-name "$SAUCE_TUNNEL_NAME" --tunnel-domains "$SAUCE_TUNNEL_DOMAIN" -f sc.lock -d sc.pid --no-ssl-bump-domains all &
         echo "Waiting for Sauce Connect to be ready for $SAUCE_TUNNEL_DOMAIN ..."
+        counter=0
+        sleeptime=2
+        limit=10
         while [ ! -f sc.lock ]
         do
           echo "No lock..."
-          sleep 2
+          sleep $sleeptime
           echo "Does lock exist?"
+          counter=$((counter + 1))
+          if [ $counter -ge $limit ]; then
+            echo "Lock file was not created after $counter tries; spent $((counter*sleeptime)) seconds trying and retrying. That's a fail bruh. Yer done. ¯\_(ツ)_/¯"
+            exit 1
+          fi
         done
         echo "lock exists!"
         echo "pid=$(cat sc.pid)" >> "$GITHUB_OUTPUT"
-
         eval "${{ inputs.prerunScript }}"
 
     - name: Run sauce
       shell: bash
+      if: ${{ inputs.skipSauceCtl == '' }} # if `skipSauceCtl` is unset, run saucectl -->
       run: |
         export SAUCE_USERNAME=${{ inputs.sauceUsername }}
         export SAUCE_ACCESS_KEY=${{ inputs.sauceAccessKey }}
