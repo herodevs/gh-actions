@@ -6,6 +6,9 @@ inputs:
   snykToken:
     description: The snyk token used to access snyk cloud and/or run scan
     required: true
+  snykOrgId:
+    description: The ID of the organization to access snyk cloud and/or run scan
+    required: true
   snykThreshold:
     description: The snyk threshold to fail on
     default: medium
@@ -22,7 +25,7 @@ runs:
       if: ${{ inputs.policyPath == '' }}
       uses: snyk/actions/node@master
       with:
-        args: --severity-threshold=${{ inputs.snykThreshold }} --all-projects --org=${{ secrets.SNYK_ORG_ID }}
+        args: --severity-threshold=${{ inputs.snykThreshold }} --all-projects --org=${{ inputs.snykOrgId }}
       env:
         SNYK_TOKEN: ${{ inputs.snykToken }}
 
@@ -30,6 +33,6 @@ runs:
       if: ${{ inputs.policyPath != '' }}
       uses: snyk/actions/node@master
       with:
-        args: --severity-threshold=${{ inputs.snykThreshold }} --all-projects --policy-path=${{ inputs.policyPath }} --org=${{ secrets.SNYK_ORG_ID }}
+        args: --severity-threshold=${{ inputs.snykThreshold }} --all-projects --policy-path=${{ inputs.policyPath }} --org=${{ inputs.snykOrgId }}
       env:
         SNYK_TOKEN: ${{ inputs.snykToken }}
